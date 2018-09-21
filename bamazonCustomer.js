@@ -1,54 +1,101 @@
-var mysql = require('mysql');
 var inquirer = require("inquirer");
+var mysql = require("mysql");
 
 var connection = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : '',
-  database : 'playlist_db'
+    host: "localhost",
+
+    // Your port; if not 3306
+    port: 3306,
+
+    // Your username
+    user: "root",
+
+    // Your password
+    password: "",
+    database: "bamazon"
 });
- 
-connection.connect(function() {
-  deleteExample();
+
+connection.connect(function(err) {
+    if (err) throw err;
+    console.log("connected as id " + connection.threadId);
+
 });
 
-function deleteExample() {
-  connection.query("DELETE FROM songs WHERE id = ?;", [6], function() {
-    console.log("record deleted");
-  });
+function initial(cb) {
+
+    connection.query("SELECT item_id, product_name, price FROM products;", function(err, res, fields) {
+
+        if (err) throw err;
+
+        for (let i = 0; i < res.length; i++) {
+            console.log("-------------------------")
+            console.log("ID: " + res[i].item_id + " Product Name: " + res[i].product_name + " Price: $" + res[i].price);
+
+        }
+
+        cb();
+
+    })
+
 }
 
-function updateExample() {
-  connection.query("UPDATE songs SET genre = ? WHERE ?;", [
-    "old-timey",
-    {
-      id: 5
-    }
-  ], function() {
-    console.log("record updated");
-  });
-}
+initial(function() {
+    inquirer
+        .prompt([{
+            type: "input",
+            message: "Input the ID of the item you wish to purchase.",
+            name: "purchaseID"
+        }])
+        .then(res => {
 
-function insertExample() {
-  var artist = "The Beatles";
-  var title = "Yellow Submarine";
-  var genre = "awesome";
-  
-  connection.query('INSERT INTO songs SET artist = ?, title = ?, genre = ?;', [artist, title, genre], function() {
-    console.log("new record inserted!");
-  });
-}
+            var productID = res.purchaseID;
 
-function selectExample() {
-  var genre = "Rap";
-   
-  var query = connection.query('SELECT * FROM songs WHERE genre = ? OR genre = ?', [genre, "R&B"], function (error, results, fields) {
-    if (error) throw error;
-    
-    for (let i = 0; i < results.length; i++) {
-      console.log(results[i].artist + " is a " + results[i].genre + " band");
-    }
-  });
-  
-  console.log(query.sql);
-}
+            inquirer
+                .prompt([{
+                    type: "input",
+                    message: "How many units do you wish to purchase?",
+                    name: "purchaseNumber"
+                }])
+                .then(res => {
+
+                    var purchaseNumber = res.purchaseNumber;
+
+                    connection.query("SELECT stock_quantity, price FROM products WHERE item_id = ?", [productID], function(err, res, fields) {
+
+                            if (err) throw err;
+
+                            var itemPrice = res[0].price;
+                            var stockQuantity = res[0].stock_quantity;
+
+                            if (purchaseNumber > stockQuantity) {
+                                console.log("Insufficient quantity! Goodbye!")
+                                connection.end(function(err) {
+                                    // The connection is terminated now
+                                });
+                            } else if (purchaseNumber <= stockQuantity) {
+
+                                var newQuantity = stockQuantity - purchaseNumber;
+
+                                connection.query("UPDATE products SET stock_quantity = ? WHERE item_id = ?", [newQuantity, productID], function(err, res, fields) {
+
+                                    if (err) throw err;
+
+                                    var totalCost = purchaseNumber * itemPrice
+
+                                    console.log("The total cost of your purchase was $" + totalCost + ". Have a nice day!");
+
+                                    connection.end(function(err) {
+                                        // The connection is terminated now
+                                    });
+
+                                })
+                            }
+
+                        }
+
+                    )
+
+                });
+
+        });
+});
