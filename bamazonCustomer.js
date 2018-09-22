@@ -29,7 +29,9 @@ function initial(cb) {
 
         for (let i = 0; i < res.length; i++) {
             console.log("-------------------------")
-            console.log("ID: " + res[i].item_id + " Product Name: " + res[i].product_name + " Price: $" + res[i].price);
+            console.log("ID: " + res[i].item_id);
+            console.log("Product Name: " + res[i].product_name);
+            console.log("Price: $" + res[i].price);
 
         }
 
