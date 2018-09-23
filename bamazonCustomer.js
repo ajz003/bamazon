@@ -15,7 +15,7 @@ var connection = mysql.createConnection({
     database: "bamazon"
 });
 
-connection.connect(function(err) {
+connection.connect(function (err) {
     if (err) throw err;
     console.log("connected as id " + connection.threadId);
 
@@ -23,7 +23,7 @@ connection.connect(function(err) {
 
 function initial(cb) {
 
-    connection.query("SELECT item_id, product_name, price FROM products;", function(err, res, fields) {
+    connection.query("SELECT item_id, product_name, price FROM products;", function (err, res, fields) {
 
         if (err) throw err;
 
@@ -41,7 +41,7 @@ function initial(cb) {
 
 }
 
-initial(function() {
+initial(function () {
     inquirer
         .prompt([{
             type: "input",
@@ -62,38 +62,40 @@ initial(function() {
 
                     var purchaseNumber = res.purchaseNumber;
 
-                    connection.query("SELECT stock_quantity, price FROM products WHERE item_id = ?", [productID], function(err, res, fields) {
+                    connection.query("SELECT stock_quantity, price FROM products WHERE item_id = ?", [productID], function (err, res, fields) {
 
-                            if (err) throw err;
+                        if (err) throw err;
 
-                            var itemPrice = res[0].price;
-                            var stockQuantity = res[0].stock_quantity;
+                        var itemPrice = res[0].price;
+                        var stockQuantity = res[0].stock_quantity;
 
-                            if (purchaseNumber > stockQuantity) {
-                                console.log("Insufficient quantity! Goodbye!")
-                                connection.end(function(err) {
+                        if (purchaseNumber > stockQuantity) {
+                            console.log("Insufficient quantity! Goodbye!")
+                            connection.end(function (err) {
+                                // The connection is terminated now
+                            });
+                        } else if (purchaseNumber <= stockQuantity) {
+
+                            var newQuantity = stockQuantity - purchaseNumber;
+                            var totalCost = purchaseNumber * itemPrice
+
+                            connection.query("UPDATE products SET stock_quantity = ?, product_sales = ? WHERE item_id = ?", [newQuantity, totalCost, productID], function (err, res, fields) {
+
+                                if (err) throw err;
+
+                                console.log("The total cost of your purchase was $" + totalCost + ". Have a nice day!");
+
+                                connection.end(function (err) {
                                     // The connection is terminated now
                                 });
-                            } else if (purchaseNumber <= stockQuantity) {
 
-                                var newQuantity = stockQuantity - purchaseNumber;
 
-                                connection.query("UPDATE products SET stock_quantity = ? WHERE item_id = ?", [newQuantity, productID], function(err, res, fields) {
 
-                                    if (err) throw err;
 
-                                    var totalCost = purchaseNumber * itemPrice
-
-                                    console.log("The total cost of your purchase was $" + totalCost + ". Have a nice day!");
-
-                                    connection.end(function(err) {
-                                        // The connection is terminated now
-                                    });
-
-                                })
-                            }
-
+                            })
                         }
+
+                    }
 
                     )
 

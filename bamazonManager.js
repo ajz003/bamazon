@@ -68,6 +68,7 @@ function viewLowQuantity() {
         if (err) throw err;
         for (let i = 0; i < res.length; i++) {
             console.log("-------------------------")
+            console.log("RUNNING LOW!")
             console.log("ID: " + res[i].item_id);
             console.log("Product Name: " + res[i].product_name);
             console.log("Price: $" + res[i].price);
@@ -110,16 +111,8 @@ function addNewProduct() {
             message: "What is the name of the product you wish to add?",
             name: "productName"
         }])
-        .then(res => {
-            var productName = res.productName;
-            inquirer
-                .prompt([{
-                    type: "input",
-                    message: "What department will this new product belong to?",
-                    name: "departmentName"
-                }])
                 .then(res => {
-                    var departmentName = res.departmentName;
+                    var productName = res.productName;
                     inquirer
                         .prompt([{
                             type: "input",
@@ -138,20 +131,19 @@ function addNewProduct() {
                                     var productStock = res.productStock;
                                     connection.query(`INSERT INTO products 
                                                     SET product_name = ?,
-                                                    department_name = ?,
                                                     price = ?,
-                                                    stock_quantity = ?`, [productName, departmentName, productPrice, productStock], function (err, res, fields) {
+                                                    stock_quantity = ?`, [productName, productPrice, productStock], function (err, res, fields) {
                                             if (err) throw err;
                                             console.log("-------------------------")
                                             console.log("Product Name: " + productName);
                                             console.log("Price: $" + productPrice);
-                                            console.log("Department: " + departmentName);
                                             console.log("Stock Quantity: " + productStock);
+                                            console.log("-------------------------")
                                             console.log("New product added!");
                                             beginPrompt();
                                         })
                                 });
                         });
-                });
+          
         });
 };
