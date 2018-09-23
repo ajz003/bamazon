@@ -64,39 +64,44 @@ initial(function () {
 
                     connection.query("SELECT stock_quantity, price FROM products WHERE item_id = ?", [productID], function (err, res, fields) {
 
-                        if (err) throw err;
+                        if (res[0] === undefined) {
+                            console.log("ID not found. Goodbye!");
+                            connection.end();
+                        } else {
 
-                        var itemPrice = res[0].price;
-                        var stockQuantity = res[0].stock_quantity;
+                            if (err) throw err;
 
-                        if (purchaseNumber > stockQuantity) {
-                            console.log("Insufficient quantity! Goodbye!")
-                            connection.end(function (err) {
-                                // The connection is terminated now
-                            });
-                        } else if (purchaseNumber <= stockQuantity) {
+                            let itemPrice = res[0].price;
+                            let stockQuantity = res[0].stock_quantity;
 
-                            var newQuantity = stockQuantity - purchaseNumber;
-                            var totalCost = purchaseNumber * itemPrice
-
-                            connection.query("UPDATE products SET stock_quantity = ?, product_sales = ? WHERE item_id = ?", [newQuantity, totalCost, productID], function (err, res, fields) {
-
-                                if (err) throw err;
-
-                                console.log("The total cost of your purchase was $" + totalCost + ". Have a nice day!");
-
+                            if (purchaseNumber > stockQuantity) {
+                                console.log("Insufficient quantity! Goodbye!")
                                 connection.end(function (err) {
                                     // The connection is terminated now
                                 });
+                            } else if (purchaseNumber <= stockQuantity) {
+
+                                let newQuantity = stockQuantity - purchaseNumber;
+                                let totalCost = purchaseNumber * itemPrice
+
+                                connection.query("UPDATE products SET stock_quantity = ?, product_sales = ? WHERE item_id = ?", [newQuantity, totalCost, productID], function (err, res, fields) {
+
+                                    if (err) throw err;
+
+                                    console.log("The total cost of your purchase was $" + totalCost + ". Have a nice day!");
+
+                                    connection.end(function (err) {
+                                        // The connection is terminated now
+                                    });
 
 
 
 
-                            })
+                                })
+                            }
+
                         }
-
                     }
-
                     )
 
                 });
